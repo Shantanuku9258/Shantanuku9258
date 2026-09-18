@@ -1,0 +1,35 @@
+name: Update Contribution Activity
+
+on:
+  schedule:
+    - cron: "59 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  activity:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout profile repository
+        uses: actions/checkout@v6
+
+      - name: Generate contribution activity SVG
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_REPOSITORY_OWNER: ${{ github.repository_owner }}
+        run: python3 scripts/generate_contributions.py
+
+      - name: Commit contribution activity
+        run: |
+          git add profile/contributions.svg
+          if git diff --cached --quiet -- profile/contributions.svg; then
+            echo "No contribution graph changes."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "chore: update contribution activity"
+          git push
